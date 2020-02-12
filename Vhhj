@@ -1,0 +1,180 @@
+const discord = require("discord.js"),createPrivateRoom = require("./events/createPrivateRoom.js");
+
+var client = new discord.Client();
+
+client.on("ready",()=>{
+    console.log(`Бот запущен.`);
+})
+
+client.on("voiceStateUpdate",(oldMember,newMember)=>{
+    createPrivateRoom(oldMember,newMember)
+})
+
+client.login("Суды токен бота");
+
+
+var servers = {};
+
+module.exports = function(oM,nM){
+    if(nM.voiceChannel){
+        //если комнаты для создания приваток не существует
+        if(!nM.voiceChannel.guild.channels.find(channel=>channel.name == "создать приват")){
+            nM.voiceChannel.guild.createChannel("создать приват",{type:'VOICE',
+            permissionOverwrites: [{
+                id:nM.guild.id,
+                deny: ['ADMINISTRATOR','SPEAK'],
+                allow: ['CONNECT']
+            }]},{reason:"Создан канал для приватных комнат"}).then(()=>{
+                nM.voiceChannel.guild.channels.find(channel=>channel.name == "создать приват").setUserLimit(1,"Канал для создания приватных комнат")   
+            })
+        }
+        //создаём приватку если пользователь зайдёт в канал
+        if(nM.voiceChannel.name == "создать приват"){
+            nM.voiceChannel.guild.createChannel("Приват",{type:'VOICE',
+            permissionOverwrites: [{
+                id:nM.guild.id,
+                deny: ['ADMINISTRATOR'],
+                allow: ['CONNECT','SPEAK','VIEW_CHANNEL']
+            }]}).then((room)=>{
+                nM.setVoiceChannel(room.id);
+                nM.voiceChannel.guild.channels.find(channel=>channel.id==room.id).overwritePermissions(nM, {
+                    KICK_MEMBERS:true,
+                    MANAGE_CHANNELS:true   
+                  });
+                if(!servers[nM.guild.id])servers[nM.guild.id] = {};
+                if(!servers[nM.guild.id].voiceMember)servers[nM.guild.id].voiceMember = {};
+                if(!servers[nM.guild.id].voiceMember[nM.id])servers[nM.guild.id].voiceMember[nM.id] = {};
+                if(!servers[nM.guild.id].voiceMember[nM.id].room)servers[nM.guild.id].voiceMember[nM.id].room = room.id;
+                servers[nM.guild.id].voiceMember[nM.id].room = room.id;
+                if(!servers[nM.guild.id].voiceMember[nM.id].interval)servers[nM.guild.id].voiceMember[nM.id].interval = {};
+                servers[nM.guild.id].voiceMember[nM.id].interval = setInterval(()=>{
+                    if(nM.voiceChannel){
+                        if(servers[nM.guild.id].voiceMember[nM.id].room != nM.voiceChannel.id){
+                            nM.voiceChannel.guild.channels.find(channel=>channel.id == servers[nM.guild.id].voiceMember[nM.id].room).delete();
+                            clearInterval(servers[nM.guild.id].voiceMember[nM.id].interval);
+                        }
+                    }else if(!nM.voiceChannel){
+                        //oM.voiceChannel.guild.channels.find(channel=>channel.id == servers[nM.guild.id].voiceMember[nM.id].room).delete();
+                        clearInterval(servers[nM.guild.id].voiceMember[nM.id].interval);
+                    }
+                },3000)
+            })
+        } 
+    }
+    //При выходе из канала, удаление приват комнаты
+    if(!nM.voiceChannel){
+        if(!servers[nM.guild.id])servers[nM.guild.id] = {};
+        if(!servers[nM.guild.id].voiceMember)servers[nM.guild.id].voiceMember = {};
+        if(!servers[nM.guild.id].voiceMember[nM.id])servers[nM.guild.id].voiceMember[nM.id] = {};
+        if(!servers[nM.guild.id].voiceMember[nM.id].room)servers[nM.guild.id].voiceMember[nM.id].room = 0;
+        if(!oM.voiceChannel) return;
+        if(servers[nM.guild.id].voiceMember[nM.id].room == oM.voiceChannel.id){
+            oM.voiceChannel.guild.channels.find(channel=>channel.id == servers[nM.guild.id].voiceMember[nM.id].room).delete();
+        }
+    }
+}
+Теперь у вас есть приватные румы.
+Есть некоторые проблемы связанные с этим кодом, во-первых, можно сделать лучше, во-вторых из-за частых созданий приваток, бот перестаёт создавать новые комнаты какое-то время, из-за ограничений дискорда. Можно сделать комнаты, которые скрыты пока пользователь не зайдёт, но возможно это я сделаю позже.
+Всо!
+Мне нравится Реакции:bludeck
+bludeck
+bludeck
+YOUGAME ELITE
+8 Июл 2019
+#2
+Dzoom написал(а):
+Опа, а что это тут у нас?
+Гайд почти на 100% состоит из исходника и немного объяснений(т.к. в основном никому не интересно читать и понимать).
+Чтобы это всё работало вам нужен Node.js тык.
+Далее создаём папку с проектом и открываем её в среде разработки, например VScode.
+Далее в консоли переходим в директорию этой папки, и прописываем эту команду.
+Посмотреть вложение 30076(там всё можно пропустить)
+В папке должен появится данный файлик, содержащий базовые настройки проекта.
+
+Посмотреть вложение 30077
+Далее мы должны установить необходимые библиотеки, прописав данную команду в консоль.
+npm i discord.js
+У вас должна появится вот такая папочка.
+Посмотреть вложение 30078
+Теперь дело за малым, создаём файлик index.js, в него пихаем этот код:
+JavaScript:
+const discord = require("discord.js"),createPrivateRoom = require("./events/createPrivateRoom.js");
+
+var client = new discord.Client();
+
+client.on("ready",()=>{
+    console.log(`Бот запущен.`);
+})
+
+client.on("voiceStateUpdate",(oldMember,newMember)=>{
+    createPrivateRoom(oldMember,newMember)
+})
+
+client.login("Суды токен бота");
+Отлично, создаём в директории с этим файлом папку events, в которой создаём файл createPrivateRoom.js
+Картинка
+В данный файл мы закидываем этот код:
+JavaScript:
+var servers = {};
+
+module.exports = function(oM,nM){
+    if(nM.voiceChannel){
+        //если комнаты для создания приваток не существует
+        if(!nM.voiceChannel.guild.channels.find(channel=>channel.name == "создать приват")){
+            nM.voiceChannel.guild.createChannel("создать приват",{type:'VOICE',
+            permissionOverwrites: [{
+                id:nM.guild.id,
+                deny: ['ADMINISTRATOR','SPEAK'],
+                allow: ['CONNECT']
+            }]},{reason:"Создан канал для приватных комнат"}).then(()=>{
+                nM.voiceChannel.guild.channels.find(channel=>channel.name == "создать приват").setUserLimit(1,"Канал для создания приватных комнат") 
+            })
+        }
+        //создаём приватку если пользователь зайдёт в канал
+        if(nM.voiceChannel.name == "создать приват"){
+            nM.voiceChannel.guild.createChannel("Приват",{type:'VOICE',
+            permissionOverwrites: [{
+                id:nM.guild.id,
+                deny: ['ADMINISTRATOR'],
+                allow: ['CONNECT','SPEAK','VIEW_CHANNEL']
+            }]}).then((room)=>{
+                nM.setVoiceChannel(room.id);
+                nM.voiceChannel.guild.channels.find(channel=>channel.id==room.id).overwritePermissions(nM, {
+                    KICK_MEMBERS:true,
+                    MANAGE_CHANNELS:true 
+                  });
+                if(!servers[nM.guild.id])servers[nM.guild.id] = {};
+                if(!servers[nM.guild.id].voiceMember)servers[nM.guild.id].voiceMember = {};
+                if(!servers[nM.guild.id].voiceMember[nM.id])servers[nM.guild.id].voiceMember[nM.id] = {};
+                if(!servers[nM.guild.id].voiceMember[nM.id].room)servers[nM.guild.id].voiceMember[nM.id].room = room.id;
+                servers[nM.guild.id].voiceMember[nM.id].room = room.id;
+                if(!servers[nM.guild.id].voiceMember[nM.id].interval)servers[nM.guild.id].voiceMember[nM.id].interval = {};
+                servers[nM.guild.id].voiceMember[nM.id].interval = setInterval(()=>{
+                    if(nM.voiceChannel){
+                        if(servers[nM.guild.id].voiceMember[nM.id].room != nM.voiceChannel.id){
+                            nM.voiceChannel.guild.channels.find(channel=>channel.id == servers[nM.guild.id].voiceMember[nM.id].room).delete();
+                            clearInterval(servers[nM.guild.id].voiceMember[nM.id].interval);
+                        }
+                    }else if(!nM.voiceChannel){
+                        //oM.voiceChannel.guild.channels.find(channel=>channel.id == servers[nM.guild.id].voiceMember[nM.id].room).delete();
+                        clearInterval(servers[nM.guild.id].voiceMember[nM.id].interval);
+                    }
+                },3000)
+            })
+        }
+    }
+    //При выходе из канала, удаление приват комнаты
+    if(!nM.voiceChannel){
+        if(!servers[nM.guild.id])servers[nM.guild.id] = {};
+        if(!servers[nM.guild.id].voiceMember)servers[nM.guild.id].voiceMember = {};
+        if(!servers[nM.guild.id].voiceMember[nM.id])servers[nM.guild.id].voiceMember[nM.id] = {};
+        if(!servers[nM.guild.id].voiceMember[nM.id].room)servers[nM.guild.id].voiceMember[nM.id].room = 0;
+        if(!oM.voiceChannel) return;
+        if(servers[nM.guild.id].voiceMember[nM.id].room == oM.voiceChannel.id){
+            oM.voiceChannel.guild.channels.find(channel=>channel.id == servers[nM.guild.id].voiceMember[nM.id].room).delete();
+        }
+    }
+}
+Теперь у вас есть приватные румы.
+Есть некоторые проблемы связанные с этим кодом, во-первых, можно сделать лучше, во-вторых из-за частых созданий приваток, бот перестаёт создавать новые комнаты какое-то время, из-за ограничений дискорда. Можно сделать комнаты, которые скрыты пока пользователь не зайдёт, но возможно это я сделаю позже.
+Всо!
